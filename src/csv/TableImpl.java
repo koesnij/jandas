@@ -1,19 +1,11 @@
 package csv;
 
 import java.util.*;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.function.Predicate;
 
 class TableImpl implements Table {
     private final boolean hasHeader;
-    private final static class Pair<X, Y> {
-        private X x;
-        private Y y;
-
-        Pair(X x, Y y) {
-            this.x = x;
-            this.y = y;
-        }
-    }
     private List<ColumnImpl> columns;
 
     TableImpl(List<List<String>> table, boolean isFirstLineHeader) {
@@ -364,7 +356,7 @@ class TableImpl implements Table {
         Column criteria = getColumn(byIndexOfColumn);
 
         // make a table for sorting
-        List<Pair<Integer, String>> list = new ArrayList<>();
+        List<SimpleEntry<Integer, String>> list = new ArrayList<>();
         for(int i = 0; i < criteria.count(); ++i) {
             var value = criteria.getValue(i);
             if (value == null) {
@@ -375,20 +367,20 @@ class TableImpl implements Table {
                     value = isNullFirst ^ isAscending ? "\uffff" : "\u0000";
                 }
             }
-            list.add(new Pair<>(i, value));
+            list.add(new SimpleEntry<>(i, value));
         }
 
         // sort
         if (criteria.isNumericColumn()) {
-            list.sort((o1, o2) -> isAscending ? Double.valueOf(o1.y).compareTo(Double.valueOf(o2.y)) : Double.valueOf(o2.y).compareTo(Double.valueOf(o1.y)));
+            list.sort((o1, o2) -> isAscending ? Double.valueOf(o1.getValue()).compareTo(Double.valueOf(o2.getValue())) : Double.valueOf(o2.getValue()).compareTo(Double.valueOf(o1.getValue())));
         } else {
-            list.sort((o1, o2) -> isAscending ? o1.y.compareTo(o2.y) : o2.y.compareTo(o1.y));
+            list.sort((o1, o2) -> isAscending ? o1.getValue().compareTo(o2.getValue()) : o2.getValue().compareTo(o1.getValue()));
         }
 
         // set value
         for(int row = 0; row < getRowCount(); ++row)
             for (int col = 0; col < getColumnCount(); ++col)
-                getColumn(col).setValue( row, prevTable.getColumn(col).getValue(list.get(row).x) );
+                getColumn(col).setValue( row, prevTable.getColumn(col).getValue(list.get(row).getKey()) );
 
         return this;
     }
