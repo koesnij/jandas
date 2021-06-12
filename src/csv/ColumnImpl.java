@@ -73,10 +73,8 @@ class ColumnImpl implements Column {
         for (int i = 0; i < count(); ++i) {
             try {
                 var cell = getValue(i, Double.class);
-                if (cell != null) {
-                    doubles.add(cell);
-                }
-            } catch (NumberFormatException e) {
+                doubles.add(cell);
+            } catch (IllegalArgumentException e) {
                 // Not a Number
             }
         }
@@ -107,15 +105,18 @@ class ColumnImpl implements Column {
     }
 
     @Override
-    public <T extends Number> T getValue(int index, Class<T> t) throws NumberFormatException {
-        if(cells.get(index) == null) return null;
+    public <T extends Number> T getValue(int index, Class<T> t) throws IllegalArgumentException {
+        if (cells.get(index) == null) {
+            throw new IllegalArgumentException("Cannot cast 'null' to Number");
+        }
         if (t.isAssignableFrom(Double.class)) {
             return t.cast(Double.parseDouble(cells.get(index)));
-        } else if (t.isAssignableFrom(Integer.class)) {
-            return t.cast(Integer.parseInt(cells.get(index)));
-        } else {
-            throw new IllegalArgumentException("Bad type.");
         }
+        if (t.isAssignableFrom(Integer.class)) {
+            return t.cast(Integer.parseInt(cells.get(index)));
+        }
+
+        throw new IllegalArgumentException("Bad type.");
     }
 
     @Override
@@ -303,12 +304,10 @@ class ColumnImpl implements Column {
         for (var row = 0; row < count(); ++row) {
             try {
                 var value = getValue(row, Double.class);
-                if (value != null) {
-                    value = (value - mean) / std; // standardize
-                    setValue(row, value);
-                    isModified = true; // check column is modified
-                }
-            } catch (NumberFormatException e) {
+                value = (value - mean) / std; // standardize
+                setValue(row, value);
+                isModified = true; // check column is modified
+            } catch (IllegalArgumentException e) {
                 // pass null
             }
         }
@@ -326,12 +325,10 @@ class ColumnImpl implements Column {
         for (var row = 0; row < count(); ++row) {
             try {
                 var value = getValue(row, Double.class);
-                if (value != null) {
-                    value = (value - min) / range; // normalize
-                    setValue(row, value);
-                    isModified = true; // check column is modified
-                }
-            } catch (NumberFormatException e) {
+                value = (value - min) / range; // normalize
+                setValue(row, value);
+                isModified = true; // check column is modified
+            } catch (IllegalArgumentException e) {
                 // pass null
             }
         }
