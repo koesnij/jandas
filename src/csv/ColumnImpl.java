@@ -17,14 +17,14 @@ class ColumnImpl implements Column {
     }
 
     void addCell(String cell) {
-        if (cell.length() == 0) cell = "null";
+        if (cell.length() == 0) cell = null;
         cells.add(cell);
     }
 
     boolean isIntegerColumn() {
         for (String cell : cells) {
             try {
-                if (!cell.equals("null")) Integer.parseInt(cell);
+                if (cell != null) Integer.parseInt(cell);
             } catch (NumberFormatException e) {
                 return false;
             }
@@ -99,7 +99,7 @@ class ColumnImpl implements Column {
 
     @Override
     public <T extends Number> T getValue(int index, Class<T> t) throws NumberFormatException {
-        if(cells.get(index).equals("null")) return null;
+        if(cells.get(index) == null) return null;
         if (t.isAssignableFrom(Double.class)) {
             return t.cast(Double.parseDouble(cells.get(index)));
         } else if (t.isAssignableFrom(Integer.class)) {
@@ -132,7 +132,7 @@ class ColumnImpl implements Column {
         if (isNumericColumn()) {
             for (String cell : cells) {
                 // double 인 경우 반올림
-                if (!cell.equals("null") && cell.contains(".")) {
+                if (cell != null && cell.contains(".")) {
                     cell = Math.round(Double.parseDouble(cell) * 1000000) / 1000000.0 + "";
                 }
                 canvas.add(String.format("%" + width + "s", cell));
@@ -148,7 +148,7 @@ class ColumnImpl implements Column {
     public boolean isNumericColumn() {
         for (String cell : cells) {
             try {
-                if (!cell.equals("null")) Double.parseDouble(cell);
+                if (cell != null) Double.parseDouble(cell);
             } catch (NumberFormatException e) {
                 return false;
             }
@@ -160,7 +160,7 @@ class ColumnImpl implements Column {
     public long getNullCount() {
         var count = 0;
         for (String cell : cells) {
-            if (cell.equals("null")) ++count;
+            if (cell == null) ++count;
         }
         return count;
     }
@@ -254,7 +254,7 @@ class ColumnImpl implements Column {
 
         var mean = getMean();
         for (var row = 0; row < cells.size(); ++row) {
-            if (getValue(row).equals("null")) {
+            if (getValue(row) == null) {
                 setValue(row, mean);
             }
         }
@@ -266,7 +266,7 @@ class ColumnImpl implements Column {
         if (!isNumericColumn() || getNullCount() == 0) return false;
 
         for (var row = 0; row < cells.size(); ++row) {
-            if (getValue(row).equals("null")) {
+            if (getValue(row) == null) {
                 setValue(row, 0);
             }
         }
@@ -320,7 +320,7 @@ class ColumnImpl implements Column {
     @Override
     public boolean factorize() {
         TreeSet<String> set = new TreeSet<>(cells);
-        set.remove("null");
+        set.remove(null);
         if (set.size() != 2) return false;
 
         var isModified = false;

@@ -81,7 +81,7 @@ public class CSVs {
         List<Pair<Integer, String>> list = new ArrayList<>();
         for(int i = 0; i < criteria.count(); ++i) {
             var value = criteria.getValue(i);
-            if (value.equals("null")) {
+            if (value == null) {
                 // asc&&nullFirst -MAX / asc&&!nullFirst MAX / !asc&&nullFirst MAX / !asc&&!nullFirst -MAX
                 if (criteria.isNumericColumn())
                     value = Double.MAX_VALUE * (isNullFirst ^ isAscending ? 1 : -1) + "";

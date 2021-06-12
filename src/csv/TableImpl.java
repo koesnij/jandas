@@ -326,7 +326,7 @@ class TableImpl implements Table {
                 // T가 String 이나 Object 인 경우
                 if (predicate.test((T) stringValue))    passedRows.add(row);
             } catch (Exception e) {
-                if (stringValue != "null") {
+                if (stringValue != null) {
                     try {
                         Double doubleValue = Double.parseDouble(stringValue);
                         if (predicate.test((T) doubleValue)) passedRows.add(row);
@@ -356,7 +356,7 @@ class TableImpl implements Table {
         List<Pair<Integer, String>> list = new ArrayList<>();
         for(int i = 0; i < criteria.count(); ++i) {
             var value = criteria.getValue(i);
-            if (value.equals("null")) {
+            if (value == null) {
                 // asc&&nullFirst -MAX / asc&&!nullFirst MAX / !asc&&nullFirst MAX / !asc&&!nullFirst -MAX
                 if (criteria.isNumericColumn()) {
                     value = Double.MAX_VALUE * (isNullFirst ^ isAscending ? 1 : -1) + "";
