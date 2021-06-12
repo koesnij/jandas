@@ -1,6 +1,7 @@
 package csv;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 class ColumnImpl implements Column {
     private String header;
@@ -17,14 +18,14 @@ class ColumnImpl implements Column {
     }
 
     void addCell(String cell) {
-        if (cell.length() == 0) cell = "null";
+        if (cell != null && cell.length() == 0) cell = null;
         cells.add(cell);
     }
 
     boolean isIntegerColumn() {
         for (String cell : cells) {
             try {
-                if (!cell.equals("null")) Integer.parseInt(cell);
+                if (cell != null) Integer.parseInt(cell);
             } catch (NumberFormatException e) {
                 return false;
             }
@@ -37,6 +38,11 @@ class ColumnImpl implements Column {
 
         if (isNumericColumn()) {
             for (String cell : cells) {
+                // null
+                if (cell == null) {
+                    maxWidth = Math.max(maxWidth, 4);
+                    continue;
+                }
 
                 // Double type
                 if (cell.contains(".")) {
@@ -55,7 +61,7 @@ class ColumnImpl implements Column {
 
         // Not numeric column
         for (String cell : cells) {
-            maxWidth = Math.max(maxWidth, cell.length());
+            maxWidth = Math.max(maxWidth, cell == null ? 4 : cell.length());
         }
 
         return maxWidth;
@@ -66,8 +72,9 @@ class ColumnImpl implements Column {
         List<Double> doubles = new ArrayList<>();
         for (int i = 0; i < count(); ++i) {
             try {
-                doubles.add(getValue(i, Double.class));
-            } catch (NumberFormatException e) {
+                var cell = getValue(i, Double.class);
+                doubles.add(cell);
+            } catch (IllegalArgumentException e) {
                 // Not a Number
             }
         }
@@ -98,15 +105,18 @@ class ColumnImpl implements Column {
     }
 
     @Override
-    public <T extends Number> T getValue(int index, Class<T> t) throws NumberFormatException {
-        if(cells.get(index).equals("null")) return null;
+    public <T extends Number> T getValue(int index, Class<T> t) throws IllegalArgumentException {
+        if (cells.get(index) == null) {
+            throw new IllegalArgumentException("Cannot cast 'null' to Number");
+        }
         if (t.isAssignableFrom(Double.class)) {
             return t.cast(Double.parseDouble(cells.get(index)));
-        } else if (t.isAssignableFrom(Integer.class)) {
-            return t.cast(Integer.parseInt(cells.get(index)));
-        } else {
-            throw new IllegalArgumentException("Bad type.");
         }
+        if (t.isAssignableFrom(Integer.class)) {
+            return t.cast(Integer.parseInt(cells.get(index)));
+        }
+
+        throw new IllegalArgumentException("Bad type.");
     }
 
     @Override
@@ -132,7 +142,7 @@ class ColumnImpl implements Column {
         if (isNumericColumn()) {
             for (String cell : cells) {
                 // double 인 경우 반올림
-                if (!cell.equals("null") && cell.contains(".")) {
+                if (cell != null && cell.contains(".")) {
                     cell = Math.round(Double.parseDouble(cell) * 1000000) / 1000000.0 + "";
                 }
                 canvas.add(String.format("%" + width + "s", cell));
@@ -148,7 +158,7 @@ class ColumnImpl implements Column {
     public boolean isNumericColumn() {
         for (String cell : cells) {
             try {
-                if (!cell.equals("null")) Double.parseDouble(cell);
+                if (cell != null) Double.parseDouble(cell);
             } catch (NumberFormatException e) {
                 return false;
             }
@@ -160,7 +170,7 @@ class ColumnImpl implements Column {
     public long getNullCount() {
         var count = 0;
         for (String cell : cells) {
-            if (cell.equals("null")) ++count;
+            if (cell == null) ++count;
         }
         return count;
     }
@@ -168,10 +178,12 @@ class ColumnImpl implements Column {
     @Override
     public long getNumericCount() {
         var count = 0;
-        for (String element : cells) {
+        for (String cell : cells) {
             try {
-                Double.parseDouble(element);
-                ++count;
+                if (cell != null) {
+                    Double.parseDouble(cell);
+                    ++count;
+                }
             } catch (NumberFormatException e) {
                 // pass NaN
             }
@@ -184,7 +196,9 @@ class ColumnImpl implements Column {
         var min = Double.MAX_VALUE;
         for (String cell : cells) {
             try {
-                min = Math.min(min, Double.parseDouble(cell));
+                if (cell != null) {
+                    min = Math.min(min, Double.parseDouble(cell));
+                }
             } catch (NumberFormatException e) {
                 // pass NaN
             }
@@ -197,7 +211,9 @@ class ColumnImpl implements Column {
         var max = -Double.MAX_VALUE;
         for (String cell : cells) {
             try {
-                max = Math.max(max, Double.parseDouble(cell));
+                if(cell != null) {
+                    max = Math.max(max, Double.parseDouble(cell));
+                }
             } catch (NumberFormatException e) {
                 // pass NaN
             }
@@ -210,7 +226,9 @@ class ColumnImpl implements Column {
         var sum = 0.0;
         for (String cell : cells) {
             try {
-                sum += Double.parseDouble(cell);
+                if (cell != null) {
+                    sum += Double.parseDouble(cell);
+                }
             } catch (NumberFormatException e) {
                 // pass NaN
             }
@@ -225,7 +243,9 @@ class ColumnImpl implements Column {
 
         for (String cell : cells) {
             try {
-                sum += Math.pow(Double.parseDouble(cell) - mean, 2);
+                if (cell != null) {
+                    sum += Math.pow(Double.parseDouble(cell) - mean, 2);
+                }
             } catch (NumberFormatException e) {
                 // pass NaN
             }
@@ -254,7 +274,7 @@ class ColumnImpl implements Column {
 
         var mean = getMean();
         for (var row = 0; row < cells.size(); ++row) {
-            if (getValue(row).equals("null")) {
+            if (getValue(row) == null) {
                 setValue(row, mean);
             }
         }
@@ -266,7 +286,7 @@ class ColumnImpl implements Column {
         if (!isNumericColumn() || getNullCount() == 0) return false;
 
         for (var row = 0; row < cells.size(); ++row) {
-            if (getValue(row).equals("null")) {
+            if (getValue(row) == null) {
                 setValue(row, 0);
             }
         }
@@ -283,12 +303,11 @@ class ColumnImpl implements Column {
 
         for (var row = 0; row < count(); ++row) {
             try {
-                double value = getValue(row, Double.class);
+                var value = getValue(row, Double.class);
                 value = (value - mean) / std; // standardize
                 setValue(row, value);
-
                 isModified = true; // check column is modified
-            } catch (NumberFormatException e) {
+            } catch (IllegalArgumentException e) {
                 // pass null
             }
         }
@@ -305,12 +324,11 @@ class ColumnImpl implements Column {
 
         for (var row = 0; row < count(); ++row) {
             try {
-                double value = getValue(row, Double.class);
+                var value = getValue(row, Double.class);
                 value = (value - min) / range; // normalize
                 setValue(row, value);
-
                 isModified = true; // check column is modified
-            } catch (NumberFormatException e) {
+            } catch (IllegalArgumentException e) {
                 // pass null
             }
         }
@@ -319,8 +337,7 @@ class ColumnImpl implements Column {
 
     @Override
     public boolean factorize() {
-        TreeSet<String> set = new TreeSet<>(cells);
-        set.remove("null");
+        TreeSet<String> set = new TreeSet<>(cells.stream().filter(c -> c != null).collect(Collectors.toSet()));
         if (set.size() != 2) return false;
 
         var isModified = false;

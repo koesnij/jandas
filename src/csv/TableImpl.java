@@ -5,7 +5,7 @@ import java.util.function.Predicate;
 
 class TableImpl implements Table {
     private final boolean hasHeader;
-    private class Pair<X, Y> {
+    private final static class Pair<X, Y> {
         private X x;
         private Y y;
 
@@ -39,9 +39,10 @@ class TableImpl implements Table {
 
     @Override
     public String toString() {
+        int[] dtypes = {0, 0, 0}; // for dtypes count
         String result =
                   "<csv.Table@" + Integer.toHexString(hashCode()) + ">\n"
-                + "RangeIndex: " + columns.get(0).count() + ", 0 to " + (columns.get(0).count() - 1) + "\n"
+                + "RangeIndex: " + columns.get(0).count() + " entries, 0 to " + (columns.get(0).count() - 1) + "\n"
                 + "Data columns (total " + columns.size() + " columns): \n";
 
         // Metadata table
@@ -69,9 +70,18 @@ class TableImpl implements Table {
             line.add(currentColumn.count() - currentColumn.getNullCount() + " non-null");
 
             // Set dtype
-            if (((ColumnImpl) currentColumn).isIntegerColumn()) line.add("int");
-            else if (currentColumn.isNumericColumn()) line.add("double");
-            else line.add("String");
+            if (((ColumnImpl) currentColumn).isIntegerColumn()) {
+                ++dtypes[1];
+                line.add("int");
+            }
+            else if (currentColumn.isNumericColumn()) {
+                ++dtypes[0];
+                line.add("double");
+            }
+            else {
+                ++dtypes[2];
+                line.add("String");
+            }
 
             // Set width
             width.set(0, Math.max(width.get(0), line.get(0).length()));
@@ -90,6 +100,7 @@ class TableImpl implements Table {
                     + String.format("%" + width.get(2) + "s", row.get(2)) + " |"
                     + String.format("%-" + width.get(3) + "s", row.get(3)) + "\n";
         }
+        result += "dtypes: double(" + dtypes[0] + "), int(" + dtypes[1] + "), String(" + dtypes[2] + ")";
 
         return result;
     }
@@ -326,7 +337,7 @@ class TableImpl implements Table {
                 // T가 String 이나 Object 인 경우
                 if (predicate.test((T) stringValue))    passedRows.add(row);
             } catch (Exception e) {
-                if (stringValue != "null") {
+                if (stringValue != null) {
                     try {
                         Double doubleValue = Double.parseDouble(stringValue);
                         if (predicate.test((T) doubleValue)) passedRows.add(row);
@@ -356,7 +367,7 @@ class TableImpl implements Table {
         List<Pair<Integer, String>> list = new ArrayList<>();
         for(int i = 0; i < criteria.count(); ++i) {
             var value = criteria.getValue(i);
-            if (value.equals("null")) {
+            if (value == null) {
                 // asc&&nullFirst -MAX / asc&&!nullFirst MAX / !asc&&nullFirst MAX / !asc&&!nullFirst -MAX
                 if (criteria.isNumericColumn()) {
                     value = Double.MAX_VALUE * (isNullFirst ^ isAscending ? 1 : -1) + "";
@@ -431,7 +442,7 @@ class TableImpl implements Table {
         boolean isModified = false;
 
         for (int i = 0; i < getColumnCount(); ++i) {
-            if (columns.get(i).fillNullWithMean()) {
+            if (getColumn(i).fillNullWithMean()) {
                 isModified = true;
             }
         }
