@@ -1,6 +1,7 @@
 package csv;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 class ColumnImpl implements Column {
     private String header;
@@ -17,7 +18,7 @@ class ColumnImpl implements Column {
     }
 
     void addCell(String cell) {
-        if (cell.length() == 0) cell = null;
+        if (cell != null && cell.length() == 0) cell = null;
         cells.add(cell);
     }
 
@@ -71,7 +72,10 @@ class ColumnImpl implements Column {
         List<Double> doubles = new ArrayList<>();
         for (int i = 0; i < count(); ++i) {
             try {
-                doubles.add(getValue(i, Double.class));
+                var cell = getValue(i, Double.class);
+                if (cell != null) {
+                    doubles.add(cell);
+                }
             } catch (NumberFormatException e) {
                 // Not a Number
             }
@@ -173,10 +177,12 @@ class ColumnImpl implements Column {
     @Override
     public long getNumericCount() {
         var count = 0;
-        for (String element : cells) {
+        for (String cell : cells) {
             try {
-                Double.parseDouble(element);
-                ++count;
+                if (cell != null) {
+                    Double.parseDouble(cell);
+                    ++count;
+                }
             } catch (NumberFormatException e) {
                 // pass NaN
             }
@@ -189,7 +195,9 @@ class ColumnImpl implements Column {
         var min = Double.MAX_VALUE;
         for (String cell : cells) {
             try {
-                min = Math.min(min, Double.parseDouble(cell));
+                if (cell != null) {
+                    min = Math.min(min, Double.parseDouble(cell));
+                }
             } catch (NumberFormatException e) {
                 // pass NaN
             }
@@ -202,7 +210,9 @@ class ColumnImpl implements Column {
         var max = -Double.MAX_VALUE;
         for (String cell : cells) {
             try {
-                max = Math.max(max, Double.parseDouble(cell));
+                if(cell != null) {
+                    max = Math.max(max, Double.parseDouble(cell));
+                }
             } catch (NumberFormatException e) {
                 // pass NaN
             }
@@ -215,7 +225,9 @@ class ColumnImpl implements Column {
         var sum = 0.0;
         for (String cell : cells) {
             try {
-                sum += Double.parseDouble(cell);
+                if (cell != null) {
+                    sum += Double.parseDouble(cell);
+                }
             } catch (NumberFormatException e) {
                 // pass NaN
             }
@@ -230,7 +242,9 @@ class ColumnImpl implements Column {
 
         for (String cell : cells) {
             try {
-                sum += Math.pow(Double.parseDouble(cell) - mean, 2);
+                if (cell != null) {
+                    sum += Math.pow(Double.parseDouble(cell) - mean, 2);
+                }
             } catch (NumberFormatException e) {
                 // pass NaN
             }
@@ -288,11 +302,12 @@ class ColumnImpl implements Column {
 
         for (var row = 0; row < count(); ++row) {
             try {
-                double value = getValue(row, Double.class);
-                value = (value - mean) / std; // standardize
-                setValue(row, value);
-
-                isModified = true; // check column is modified
+                var value = getValue(row, Double.class);
+                if (value != null) {
+                    value = (value - mean) / std; // standardize
+                    setValue(row, value);
+                    isModified = true; // check column is modified
+                }
             } catch (NumberFormatException e) {
                 // pass null
             }
@@ -310,11 +325,12 @@ class ColumnImpl implements Column {
 
         for (var row = 0; row < count(); ++row) {
             try {
-                double value = getValue(row, Double.class);
-                value = (value - min) / range; // normalize
-                setValue(row, value);
-
-                isModified = true; // check column is modified
+                var value = getValue(row, Double.class);
+                if (value != null) {
+                    value = (value - min) / range; // normalize
+                    setValue(row, value);
+                    isModified = true; // check column is modified
+                }
             } catch (NumberFormatException e) {
                 // pass null
             }
@@ -324,8 +340,7 @@ class ColumnImpl implements Column {
 
     @Override
     public boolean factorize() {
-        TreeSet<String> set = new TreeSet<>(cells);
-        set.remove(null);
+        TreeSet<String> set = new TreeSet<>(cells.stream().filter(c -> c != null).collect(Collectors.toSet()));
         if (set.size() != 2) return false;
 
         var isModified = false;
