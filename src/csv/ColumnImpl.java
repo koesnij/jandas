@@ -37,6 +37,11 @@ class ColumnImpl implements Column {
 
         if (isNumericColumn()) {
             for (String cell : cells) {
+                // null
+                if (cell == null) {
+                    maxWidth = Math.max(maxWidth, 4);
+                    continue;
+                }
 
                 // Double type
                 if (cell.contains(".")) {
@@ -55,7 +60,7 @@ class ColumnImpl implements Column {
 
         // Not numeric column
         for (String cell : cells) {
-            maxWidth = Math.max(maxWidth, cell.length());
+            maxWidth = Math.max(maxWidth, cell == null ? 4 : cell.length());
         }
 
         return maxWidth;
