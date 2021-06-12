@@ -5,12 +5,11 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class CSVs {
-    private static final char DELIMITER = ',';
-
     /**
      * @param isFirstLineHeader csv 파일의 첫 라인을 헤더(타이틀)로 처리할까요?
      */
     public static Table createTable(File csv, boolean isFirstLineHeader) throws FileNotFoundException {
+        final char DELIMITER = ',';
         List<List<String>> parsedTable = new ArrayList<>();
         List<String> line;
 
