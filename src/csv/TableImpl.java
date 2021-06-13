@@ -41,10 +41,10 @@ class TableImpl implements Table {
         List<List<String>> tableInfo = new ArrayList<>();
 
         // Set width
-        List<Integer> width = new ArrayList<>(Arrays.asList(1, 6, 14, 5));
+        List<Integer> width = Arrays.asList(1, 6, 14, 5);
 
         // Set header
-        tableInfo.add(new ArrayList<>(Arrays.asList("#", "Column", "Non-null Count", "Dtype")));
+        tableInfo.add(Arrays.asList("#", "Column", "Non-null Count", "Dtype"));
 
         // Set data
         List<String> line;
