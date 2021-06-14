@@ -1,2 +1,3 @@
-# pandas-like
-Python Pandas like library for java
+# jandas
+
+Java Data Analysis Library (Python pandas clone project)
